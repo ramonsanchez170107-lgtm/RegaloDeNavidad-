@@ -1,269 +1,370 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<title>Regalo para Dana ❤️</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Regalo para Dana — De Luis Sánchez Fuentes</title>
+
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
 <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@300;500&display=swap" rel="stylesheet">
+
 <style>
-  * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family: 'Montserrat', sans-serif; overflow-x: hidden; color:white; min-height:100vh; background:#000; position:relative;}
-  .container { position: relative; z-index:2; max-width:600px; margin:auto; padding:20px; text-align:center; }
-  h1 { font-family: 'Great Vibes', cursive; font-size:2.8rem; margin-bottom:10px; text-shadow:2px 2px 5px #000; }
-  #phraseBox { font-size:1.2rem; margin:15px 0; min-height:100px; position:relative; text-shadow:1px 1px 3px #000; }
-  img.landscape { width:100%; max-height:300px; object-fit:cover; border-radius:20px; margin-bottom:15px; display:none; box-shadow:0 0 25px rgba(255,200,220,0.5);}
-  .controls { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
-  button { background:#c9184a; border:none; padding:12px 20px; border-radius:40px; color:white; font-size:1rem; cursor:pointer; margin-top:10px; transition:0.2s; }
-  button[disabled] { opacity:.5; cursor:not-allowed; }
-  button:hover:not([disabled]) { background:#ff4d6d; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{font-family: 'Montserrat', sans-serif; color:#fff; min-height:100vh; overflow:hidden; background:#000; position:relative;}
 
-  /* Animaciones: Corazones, Nieve */
-  .heart { position:absolute; color:#ff8fab; font-size:20px; animation: float 6s linear infinite; z-index:1; pointer-events:none;}
-  @keyframes float { 0%{transform:translateY(100vh); opacity:1;} 100%{transform:translateY(-10vh); opacity:0;} }
-  .snow { position:absolute; top:-10px; background:white; border-radius:50%; opacity:0.8; animation:snowFall linear infinite; z-index:1; pointer-events:none;}
-  @keyframes snowFall { to{ transform:translateY(110vh); } }
+  /* Fullscreen map background */
+  #map{position:fixed; inset:0; z-index:0}
+  .leaflet-container{background:#000}
 
-  /* Animalitos */
-  .animal { position:absolute; bottom:20px; width:50px; height:50px; z-index:3; animation: walk 8s linear forwards; pointer-events:none; }
-  @keyframes walk { 0% { left:-60px; } 100% { left:100%; } }
+  /* Phrase box in the top-right corner so the map remains visible */
+  .phrase-box{
+    position:fixed;
+    top:16px;
+    right:16px;
+    z-index:6;
+    width:36%;
+    min-width:220px;
+    max-width:480px;
+    background: rgba(0,0,0,0.20);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border-radius:12px;
+    padding:14px 16px 46px 16px; /* space for watermark */
+    box-shadow: 0 10px 30px rgba(0,0,0,0.45);
+    color: #fff;
+    text-align:left;
+  }
+  .phrase-title{
+    font-family: 'Great Vibes', cursive;
+    font-size:1.6rem;
+    margin-bottom:8px;
+    color:#ffeef4;
+    text-shadow: 0 4px 12px rgba(0,0,0,0.6);
+  }
+  .phrase-text{ font-size:1rem; line-height:1.5; margin-bottom:10px; color:#fff; text-shadow:0 2px 8px rgba(0,0,0,0.5); min-height:120px; }
 
-  /* Mapa animado */
-  #map { position:fixed; top:0; left:0; width:100%; height:100%; z-index:0; }
-  #line { stroke:red; stroke-width:3; stroke-dasharray:10; fill:none; stroke-linecap:round; animation: dash 4s linear forwards; }
-  @keyframes dash { from { stroke-dashoffset:1000; } to { stroke-dashoffset:0; } }
+  /* subtle watermark (added only in final) */
+  .watermark{
+    position:absolute;
+    right:12px;
+    bottom:8px;
+    z-index:7;
+    font-size:0.88rem;
+    opacity:0.16;
+    pointer-events:none;
+    color:#fff;
+    font-weight:700;
+    font-family: 'Montserrat', sans-serif;
+  }
 
-  /* Loading overlay */
-  #loading { position:fixed; inset:0; background:rgba(0,0,0,0.7); color:white; display:flex; align-items:center; justify-content:center; z-index:10; font-size:1.2rem; }
-  #loading.hidden { display:none; }
+  /* Corner ornaments (bottom-left) - emojis instead of images */
+  .corner-ornaments{
+    position:fixed;
+    left:14px;
+    bottom:14px;
+    z-index:6;
+    display:flex;
+    gap:10px;
+    align-items:center;
+    padding:8px 10px;
+    border-radius:12px;
+    pointer-events:none;
+    background: rgba(255,255,255,0.02);
+    box-shadow: 0 12px 36px rgba(0,0,0,0.45);
+    backdrop-filter: blur(4px);
+  }
+  .ornament{
+    display:inline-block;
+    font-size:30px;
+    line-height:1;
+    transform-origin: 50% 50%;
+    will-change: transform, opacity;
+    text-shadow: 0 6px 18px rgba(0,0,0,0.6);
+    opacity: 0.95;
+    user-select: none;
+  }
 
-  /* Respect reduced motion */
-  @media (prefers-reduced-motion: reduce) {
-    .heart, .snow, .animal, #line { animation: none !important; transition: none !important; }
+  /* gentle float animation for ornaments */
+  @keyframes ornamentFloat {
+    0% { transform: translateY(0) rotate(-4deg) }
+    50% { transform: translateY(-8px) rotate(4deg) }
+    100% { transform: translateY(0) rotate(-4deg) }
+  }
+  .ornament { animation: ornamentFloat 4.2s ease-in-out infinite; }
+
+  .controls{ display:flex; justify-content:flex-end; gap:8px; margin-top:6px; }
+  button.next{ background:#c9184a; border:0; color:#fff; padding:10px 18px; border-radius:999px; font-size:0.96rem; cursor:pointer; box-shadow:0 8px 20px rgba(201,24,74,0.12); }
+  button.next:active{ transform:translateY(1px); }
+  button.next[disabled]{ opacity:.6; cursor:not-allowed; }
+
+  /* Marker label styles for ME / YOU (visual only) */
+  .marker-label{
+    display:inline-block;
+    padding:6px 10px;
+    background: linear-gradient(180deg,#ff7aa5,#ff4f7a);
+    color:#fff;
+    font-weight:700;
+    border-radius:10px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+    font-size:0.95rem;
+  }
+
+  /* Final title clearer */
+  .final-title{
+    font-family: 'Great Vibes', cursive;
+    font-size:2.8rem;
+    color:#fff;
+    text-shadow: 0 8px 30px rgba(0,0,0,0.6);
+    margin-bottom:10px;
+    text-align:center;
+  }
+  .final-sub{
+    text-align:center;
+    font-size:1.05rem;
+    opacity:0.95;
+    margin-top:6px;
+  }
+
+  /* Decorative final hearts (falling) */
+  .heart{ position:fixed; z-index:7; pointer-events:none; font-size:20px; animation: float 6s linear forwards; }
+  @keyframes float{ 0%{ transform: translateY(-20vh) scale(.6); opacity:0 } 10%{ opacity:1 } 100%{ transform: translateY(110vh) scale(1.1); opacity:0 } }
+
+  @media (max-width:720px){
+    .phrase-box{ width:68%; top:12px; right:12px; padding:12px 14px 40px 12px; min-width:160px; }
+    .phrase-title{ font-size:1.3rem; }
+    .corner-ornaments{ left:10px; bottom:12px; padding:6px; gap:8px; }
+    .ornament{ font-size:26px; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .heart { animation:none !important; }
+    .ornament { animation:none !important; transform:none !important; }
   }
 </style>
 </head>
 <body>
 
-<!-- Mapa animado -->
-<svg id="map" aria-hidden="true" focusable="false">
-  <image href="https://upload.wikimedia.org/wikipedia/commons/thumb/1/12/USA_map_blank.svg/1200px-USA_map_blank.svg.png" width="100%" height="100%"/>
-  <line id="line" x1="200" y1="100" x2="500" y2="400"/>
-</svg>
+<div id="map" aria-hidden="true"></div>
 
-<div id="loading" role="status" aria-live="polite">Cargando... por favor espera</div>
-
-<div class="container">
-  <h1>Feliz Navidad, Dana 🎄❤️</h1>
-  <div id="phraseBox" aria-live="polite" role="status"></div>
-  <img id="landscape" class="landscape" src="" alt="Paisaje romántico">
-  <div class="controls">
-    <button id="prevBtn" aria-label="Frase anterior">Anterior</button>
-    <button id="nextBtn" aria-label="Siguiente frase">Siguiente</button>
-    <button id="muteBtn" aria-label="Alternar música">🔊 Mute</button>
-  </div>
-  <p style="font-size:.9rem; margin-top:10px; opacity:.9">Atajos: ← Anterior · → Siguiente · Espacio/Enter Siguiente · M tecla para silenciar</p>
+<!-- Phrase box (top-right) -->
+<div class="phrase-box" id="phraseBox" aria-live="polite" role="region">
+  <div class="phrase-title" id="phraseTitle">Feliz Navidad, Dana 🎄❤️</div>
+  <div class="phrase-text" id="phraseText">...</div>
+  <div class="controls"><button id="nextBtn" class="next" type="button">Siguiente</button></div>
+  <!-- watermark holder (added only on final) -->
+  <div id="watermark" class="watermark" style="display:none;">De Luis para Dana</div>
 </div>
 
-<audio id="music" loop>
-  <source src="https://cdn.pixabay.com/download/audio/2022/12/01/audio_6e6faef2f7.mp3" type="audio/mpeg">
-</audio>
+<!-- Corner ornaments (emojis) -->
+<div id="ornaments" class="corner-ornaments" aria-hidden="true"></div>
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-  // Slides: frase + imagen + animalito
-  const slides = [
-    {
-      phrase: "Dana, incluso cuando estamos lejos, te siento cerca ❤️",
-      img: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?crop=entropy&cs=tinysrgb&fit=max&h=300&w=600&q=80",
-      animal: "https://i.imgur.com/8Km9tLL.png"
-    },
-    {
-      phrase: "Cada noche hablando contigo es mi momento favorito 🌟",
-      img: "https://images.unsplash.com/photo-1475721027785-f74eccf877e2?crop=entropy&cs=tinysrgb&fit=max&h=300&w=600&q=80",
-      animal: "https://i.imgur.com/L0y7F9B.png"
-    },
-    {
-      phrase: "Desde Chicago hasta Guadalajara, mi corazón siempre sabe dónde pertenece 💌",
-      img: "https://images.unsplash.com/photo-1482192596544-9eb780fc7f66?crop=entropy&cs=tinysrgb&fit=max&h=300&w=600&q=80",
-      animal: "https://i.imgur.com/4AiXzf8.png"
-    },
-    {
-      phrase: "Gracias por volver a elegirme, gracias por estar conmigo 💖",
-      img: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?crop=entropy&cs=tinysrgb&fit=max&h=300&w=600&q=80",
-      animal: "https://i.imgur.com/N7rlQYt.png"
-    },
-    {
-      phrase: "Merry Christmas, babe 🎄❤️",
-      img: "https://images.unsplash.com/photo-1458165492546-9f8d4c0b6f95?crop=entropy&cs=tinysrgb&fit=max&h=300&w=600&q=80",
-      animal: "https://i.imgur.com/L0y7F9B.png"
-    }
-  ];
-
-  const phraseBox = document.getElementById("phraseBox");
-  const landscape = document.getElementById("landscape");
-  const nextBtn = document.getElementById("nextBtn");
-  const prevBtn = document.getElementById("prevBtn");
-  const muteBtn = document.getElementById("muteBtn");
-  const loadingDiv = document.getElementById("loading");
-  const music = document.getElementById("music");
-
-  let currentIndex = 0;
-  let typingTimeout = null;
-  let typingCancelled = false;
-
-  // Preload images and animal icons
-  function preloadImages(urls) {
-    const promises = urls.map(url => new Promise((resolve) => {
-      const img = new Image();
-      img.onload = () => resolve({ url, status: 'ok' });
-      img.onerror = () => resolve({ url, status: 'error' });
-      img.src = url;
-    }));
-    return Promise.all(promises);
+/* -------- Slides (texto + emojis como adorno) --------
+   Ahora las "imágenes" se sustituyen por emojis decorativos en la esquina.
+*/
+const slides = [
+  {
+    title: "Un regalo para ti",
+    text: "Preparé este regalo pensando en las luces de diciembre y en la sorpresa de verte sonreír. Es un detalle sencillo, hecho con mucho cariño: cuando el tiempo es poco, quiero que estos momentos sirvan para recordarte cuánto te pienso.",
+    ornaments: ['💖','🎄','✨']
+  },
+  {
+    title: "Luces y calor",
+    text: "Aunque nuestros días sean ocupados y los minutos cortos, cada llamada y cada mensaje convierten lo ordinario en extraordinario. Gracias por tu buen humor, por las risas inesperadas y por volver siempre a mi lado.",
+    ornaments: ['❤️','🌟','🎁']
+  },
+  {
+    title: "De ciudad a ciudad",
+    text: "Entre Chicago y Guadalajara tejimos una historia divertida y cálida, con encuentros cortos y recuerdos largos. Este mapa muestra la distancia, pero lo que nos mantiene cerca son las ganas, el cariño y la paciencia.",
+    ornaments: ['💞','🧭','✈️']
+  },
+  {
+    title: "Gracias por estar",
+    text: "Gracias por volver, por elegir compartir este camino conmigo. Espero que disfrutes esta Navidad, y que pronto podamos celebrarla juntos, lado a lado.",
+    ornaments: ['🤍','🎶','🔔']
+  },
+  {
+    title: "Con todo mi amor",
+    text: "Que esta fiesta nos encuentre cerca y llenos de esperanza. Este regalo es pequeño, pero el amor que lo sostiene es inmenso.",
+    ornaments: ['😘','🎄','💫']
   }
+];
 
-  const allImageUrls = slides.flatMap(s => [s.img, s.animal]);
-  preloadImages(allImageUrls).then(() => {
-    // hide loading when preloads complete
-    loadingDiv.classList.add('hidden');
-    // show first slide once preloaded
-    showSlide(0);
-    // try autoplay (may fail if browser blocks)
-    music.play().catch(()=>{});
-    updateControls();
+/* -------- DOM references -------- */
+const phraseTitle = document.getElementById('phraseTitle');
+const phraseText = document.getElementById('phraseText');
+const ornamentsEl = document.getElementById('ornaments');
+const nextBtn = document.getElementById('nextBtn');
+const watermarkEl = document.getElementById('watermark');
+
+let current = 0;
+
+/* ---------- Typewriter helper (cancels previous) ---------- */
+function typeWriterInto(el, text, speed = 28) {
+  if (el._typingTimeout) { clearTimeout(el._typingTimeout); el._typingTimeout = null; }
+  el._typingIndex = 0;
+  el.textContent = '';
+  function step(){
+    if (el._typingIndex === null) return;
+    if (el._typingIndex < text.length){
+      el.textContent += text.charAt(el._typingIndex);
+      el._typingIndex++;
+      el._typingTimeout = setTimeout(step, speed);
+    } else {
+      el._typingTimeout = null;
+      el._typingIndex = null;
+    }
+  }
+  step();
+}
+
+/* ---------- Render ornaments (emoji decorations) ---------- */
+function renderOrnaments(list){
+  // clear previous
+  ornamentsEl.innerHTML = '';
+  if (!Array.isArray(list) || list.length === 0) return;
+  // add each emoji with a slight stagger in animation delay
+  list.forEach((ch, i) => {
+    const d = document.createElement('div');
+    d.className = 'ornament';
+    d.textContent = ch;
+    // stagger the float animation for organic movement
+    d.style.animationDelay = (i * 0.12) + 's';
+    // vary size slightly for visual interest
+    const scale = 1 + (Math.random() - 0.5) * 0.14;
+    d.style.transform = `scale(${scale})`;
+    ornamentsEl.appendChild(d);
   });
+}
 
-  // Show slide with typewriter effect
-  function showSlide(index) {
-    if (index < 0 || index >= slides.length) return;
-    // cancel any ongoing typing
-    typingCancelled = true;
-    if (typingTimeout) { clearTimeout(typingTimeout); typingTimeout = null; }
-    typingCancelled = false;
+/* ---------- Show slide ---------- */
+function showSlide(index){
+  if(index < 0) index = 0;
+  if(index >= slides.length) index = slides.length - 1;
+  current = index;
 
-    currentIndex = index;
-    phraseBox.innerHTML = "";
-    landscape.style.display = "block";
-    landscape.src = slides[index].img;
-    landscape.alt = "Paisaje romántico " + (index+1);
+  phraseTitle.textContent = slides[index].title;
+  renderOrnaments(slides[index].ornaments || []);
 
-    // Typewriter
-    const text = slides[index].phrase;
-    let i = 0;
-    function typeWriter() {
-      if (typingCancelled) return;
-      if (i < text.length) {
-        phraseBox.innerHTML += text.charAt(i);
-        i++;
-        typingTimeout = setTimeout(typeWriter, 40);
-      } else {
-        typingTimeout = null;
-      }
-    }
-    typeWriter();
+  // hide watermark until final
+  watermarkEl.style.display = 'none';
 
-    // Animalito
-    const animalImg = document.createElement("img");
-    animalImg.src = slides[index].animal;
-    animalImg.className = "animal";
-    animalImg.alt = ""; // decorative
-    // remove any existing animals so they don't stack up too much
-    document.querySelectorAll('.animal').forEach(a => a.remove());
-    document.body.appendChild(animalImg);
-    // Remove after animation duration (slightly longer than CSS)
-    const removeAfter = 8200;
-    setTimeout(() => { animalImg.remove(); }, removeAfter);
+  // typewriter text
+  typeWriterInto(phraseText, slides[index].text, 28);
 
-    updateControls();
+  // update button label
+  nextBtn.textContent = (index === slides.length - 1) ? 'Finalizar' : 'Siguiente';
+  nextBtn.disabled = false;
+}
+
+/* ---------- Final celebration ---------- */
+function showFinal(){
+  phraseTitle.textContent = '';
+  phraseText.innerHTML = `
+    <div class="final-title">MERRY CHRISTMAS, Babe 🎄😘</div>
+    <div class="final-sub">Con todo mi amor.</div>
+  `;
+  nextBtn.disabled = true;
+
+  // show subtle watermark only
+  watermarkEl.style.display = 'block';
+
+  // spawn many hearts across screen (visual only)
+  const icons = ['❤️','💖','🎄','✨','🎁','😘','🌟','🔔'];
+  for(let i=0;i<48;i++){
+    const d = document.createElement('div');
+    d.className = 'heart';
+    d.textContent = icons[Math.floor(Math.random()*icons.length)];
+    d.style.left = (5 + Math.random() * 90) + 'vw';
+    d.style.fontSize = (14 + Math.random() * 36) + 'px';
+    d.style.animationDuration = (3 + Math.random() * 4) + 's';
+    document.body.appendChild(d);
+    setTimeout(()=>d.remove(), 9000 + Math.random() * 3000);
   }
+}
 
-  function nextSlide() {
-    if (currentIndex < slides.length - 1) {
-      showSlide(currentIndex + 1);
-    }
+/* ---------- Next button ---------- */
+nextBtn.addEventListener('click', () => {
+  if(current >= slides.length - 1){
+    showFinal();
+    return;
   }
-  function prevSlide() {
-    if (currentIndex > 0) {
-      showSlide(currentIndex - 1);
-    }
+  showSlide(current + 1);
+});
+
+/* ---------- Leaflet map (non-interactive visual-only) ---------- */
+const chicago = [41.8781, -87.6298];
+const guadalajara = [20.6597, -103.3496];
+
+const map = L.map('map', {
+  center: [(chicago[0] + guadalajara[0]) / 2, (chicago[1] + guadalajara[1]) / 2],
+  zoom: 4,
+  zoomControl: false,
+  attributionControl: false,
+  dragging: false,
+  scrollWheelZoom: false,
+  doubleClickZoom: false,
+  boxZoom: false,
+  keyboard: false,
+  touchZoom: false,
+  tap: false
+});
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(map);
+
+/* labeled markers ME / YOU (visual only) */
+function createLabelIcon(text){
+  const el = document.createElement('div');
+  el.className = 'marker-label';
+  el.textContent = text;
+  return L.divIcon({ html: el.outerHTML, className: '', iconSize: [70, 28], iconAnchor: [35, 14] });
+}
+L.marker(chicago, { icon: createLabelIcon('ME'), title: 'Chicago (ME)' }).addTo(map);
+L.marker(guadalajara, { icon: createLabelIcon('YOU'), title: 'Guadalajara (YOU)' }).addTo(map);
+
+/* dashed polyline for route */
+const route = L.polyline([chicago, guadalajara], {
+  color: '#ff6fa8',
+  weight: 4,
+  opacity: 0.95,
+  dashArray: '12,10'
+}).addTo(map);
+
+map.fitBounds(route.getBounds(), { padding: [60,60] });
+
+/* animate dashed stroke by changing strokeDashoffset */
+let dashOffset = 0;
+let dashRunning = true;
+function animateDash(){
+  const path = route._path;
+  if(!path){
+    setTimeout(animateDash, 120);
+    return;
   }
-
-  nextBtn.addEventListener("click", () => nextSlide());
-  prevBtn.addEventListener("click", () => prevSlide());
-
-  // Keyboard navigation
-  document.addEventListener("keydown", (e) => {
-    // do not trap keys when typing into an input or textarea
-    const active = document.activeElement;
-    if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable)) return;
-
-    if (e.key === "ArrowRight") {
-      e.preventDefault();
-      nextSlide();
-    } else if (e.key === "ArrowLeft") {
-      e.preventDefault();
-      prevSlide();
-    } else if (e.key === " " || e.key === "Spacebar" || e.key === "Enter") {
-      // space/enter -> next
-      // allow default when focused on a button (so it still activates), otherwise prevent default scrolling on space
-      if (active && active.tagName === 'BUTTON') return;
-      e.preventDefault();
-      nextSlide();
-    } else if (e.key.toLowerCase() === 'm') {
-      // toggle mute
-      toggleMute();
-    }
-  });
-
-  // Music control
-  function toggleMute() {
-    music.muted = !music.muted;
-    updateMuteLabel();
-    if (!music.muted) {
-      music.play().catch(()=>{});
-    }
+  path.style.strokeDasharray = path.style.strokeDasharray || '12,10';
+  const speed = 0.6;
+  function step(){
+    if(!dashRunning) return;
+    dashOffset = (dashOffset + speed) % 1000;
+    path.style.strokeDashoffset = dashOffset;
+    requestAnimationFrame(step);
   }
+  requestAnimationFrame(step);
+}
+setTimeout(animateDash, 400);
 
-  muteBtn.addEventListener("click", toggleMute);
+if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+  dashRunning = false;
+}
 
-  function updateMuteLabel() {
-    // When not muted, label is "🔊 Mute" (clicking will mute). When muted, label is "🔇 Unmute".
-    muteBtn.innerText = music.muted ? "🔇 Unmute" : "🔊 Mute";
-  }
-
-  // Initialize label properly
-  music.muted = false;
-  updateMuteLabel();
-
-  // Update previous/next button disabled state
-  function updateControls() {
-    prevBtn.disabled = (currentIndex === 0);
-    nextBtn.disabled = (currentIndex === slides.length - 1);
-    // hide next if last (visual choice)
-    nextBtn.style.display = (currentIndex === slides.length - 1) ? "none" : "";
-    prevBtn.style.display = (currentIndex === 0) ? "none" : "";
-  }
-
-  // Hearts and snow effects (kept from original)
-  setInterval(()=>{
-    const heart = document.createElement("div");
-    heart.className = "heart"; heart.innerHTML = "❤️";
-    heart.style.left = Math.random() * 100 + "vw";
-    heart.style.fontSize = (Math.random() * 18 + 14) + "px";
-    document.body.appendChild(heart);
-    setTimeout(()=>heart.remove(), 6000);
-  }, 400);
-
-  setInterval(()=>{
-    const snow = document.createElement("div");
-    snow.className = "snow"; snow.style.left = Math.random() * 100 + "vw";
-    const size = Math.random() * 5 + 4;
-    snow.style.width = size + "px";
-    snow.style.height = size + "px";
-    snow.style.animationDuration = (Math.random() * 6 + 4) + "s";
-    document.body.appendChild(snow);
-    setTimeout(()=>snow.remove(), 10000);
-  }, 200);
-
+/* ---------- Init ---------- */
+showSlide(0);
 </script>
 </body>
 </html>

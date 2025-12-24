@@ -2,197 +2,215 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Para Dana ❤️</title>
+<title>Regalo para Dana ❤️</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@300;500&display=swap" rel="stylesheet">
 
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
-
-body {
-  height: 100vh;
+body { 
   font-family: 'Montserrat', sans-serif;
-  background: url("https://images.unsplash.com/photo-1511988617509-a57c8a288659") no-repeat center/cover;
-  overflow: hidden;
+  background: #000;
+  overflow-x: hidden;
   color: white;
-}
-
-.overlay {
-  position:absolute;
-  inset:0;
-  background: rgba(0,0,0,0.6);
+  min-height: 100vh;
 }
 
 .container {
-  position:relative;
-  z-index:2;
-  text-align:center;
-  top:50%;
-  transform:translateY(-50%);
-  padding:20px;
+  position: relative;
+  z-index: 2;
+  max-width: 600px;
+  margin: auto;
+  padding: 20px;
+  text-align: center;
 }
 
 h1 {
-  font-family:'Great Vibes', cursive;
-  font-size:4rem;
-  margin-bottom:20px;
+  font-family: 'Great Vibes', cursive;
+  font-size: 3rem;
+  margin-bottom: 10px;
 }
 
-#typewriter {
-  font-size:1.2rem;
-  max-width:750px;
-  margin:20px auto;
-  min-height:120px;
+#phraseBox {
+  font-size: 1.2rem;
+  margin: 15px 0;
+  min-height: 100px;
+  position: relative;
 }
 
-.gallery {
-  margin-top:30px;
-}
-
-.gallery img {
-  width:260px;
-  border-radius:20px;
-  margin:10px;
-  box-shadow:0 0 25px rgba(255,200,220,0.4);
-  animation: fadeIn 2s ease forwards;
+img.landscape {
+  width: 100%;
+  max-height: 300px;
+  object-fit: cover;
+  border-radius: 20px;
+  margin-bottom: 15px;
+  box-shadow: 0 0 25px rgba(255,200,220,0.4);
+  display: none;
 }
 
 button {
-  margin-top:25px;
   background:#c9184a;
   border:none;
-  padding:15px 35px;
-  border-radius:40px;
+  padding:12px 30px;
+  border-radius: 40px;
   color:white;
   font-size:1rem;
   cursor:pointer;
+  margin-top:10px;
   transition:0.3s;
 }
-
 button:hover { background:#ff4d6d; }
 
-.hidden { display:none; }
-
-/* Corazones */
+/* Animaciones: Corazones, Nieve */
 .heart {
   position:absolute;
   color:#ff8fab;
+  font-size:20px;
   animation: float 6s linear infinite;
+  z-index:1;
+}
+@keyframes float { 0%{transform:translateY(100vh); opacity:1;} 100%{transform:translateY(-10vh); opacity:0;} }
+
+.snow { 
+  position:absolute; top:-10px; background:white; border-radius:50%; opacity:0.8; animation:snowFall linear infinite; z-index:1;
+}
+@keyframes snowFall { to{ transform:translateY(110vh); } }
+
+/* Animalitos */
+.animal {
+  position: absolute;
+  bottom: 20px;
+  width: 50px;
+  height: 50px;
+  z-index:3;
+  animation: walk linear forwards;
 }
 
-@keyframes float {
-  0% { transform: translateY(100vh); opacity:1; }
-  100% { transform: translateY(-10vh); opacity:0; }
-}
-
-/* Nieve */
-.snow {
-  position:absolute;
-  top:-10px;
-  background:white;
-  border-radius:50%;
-  opacity:0.8;
-  animation: snowFall linear infinite;
-}
-
-@keyframes snowFall {
-  to { transform: translateY(110vh); }
-}
-
-@keyframes fadeIn {
-  from { opacity:0; transform:scale(0.95); }
-  to { opacity:1; transform:scale(1); }
+@keyframes walk {
+  0% { left:-60px; }
+  100% { left:100%; }
 }
 </style>
 </head>
 
 <body>
-<div class="overlay"></div>
 
 <div class="container">
   <h1>Feliz Navidad, Dana 🎄❤️</h1>
-
-  <div id="typewriter"></div>
-
-  <button onclick="startGift()">🎁 Descubre tu regalo</button>
-
-  <div class="gallery hidden" id="gallery">
-    <img src="https://images.unsplash.com/photo-1518199266791-5375a83190b7">
-    <img src="https://images.unsplash.com/photo-1514474959185-147c15c94c6a">
-    <img src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee">
-  </div>
+  <div id="phraseBox"></div>
+  <img id="landscape" class="landscape" src="" alt="Paisaje romántico">
+  <button id="nextBtn">Siguiente</button>
+  <button id="muteBtn">🔊 Mute</button>
 </div>
 
 <audio id="music" loop>
-  <source src="https://cdn.pixabay.com/download/audio/2022/12/01/audio_6e6faef2f7.mp3">
+  <source src="https://cdn.pixabay.com/download/audio/2022/12/01/audio_6e6faef2f7.mp3" type="audio/mpeg">
 </audio>
 
 <script>
-const text = [
-  "Dana… ❤️",
-  "A veces el tiempo no alcanza,",
-  "pero contigo siempre quiero quedarme un poquito más.",
-  "Aunque estemos lejos,",
-  "cada noche hablando contigo se siente como hogar.",
-  "Desde Chicago hasta Guadalajara,",
-  "mi corazón siempre sabe a dónde pertenece.",
-  "Gracias por estar.",
-  "Gracias por volver.",
-  "Gracias por elegirme otra vez.",
-  "Feliz Navidad, amor 🎄✨"
+// Datos: frases, imágenes y animalitos
+const slides = [
+  {
+    phrase:"Dana, incluso cuando estamos lejos, te siento cerca ❤️",
+    img:"https://images.unsplash.com/photo-1608889170158-7b1b85a20857?crop=entropy&cs=tinysrgb&fit=max&h=300&w=600",
+    animal:"https://i.imgur.com/4AiXzf8.png" // gatito caminando
+  },
+  {
+    phrase:"Cada noche hablando contigo es mi momento favorito 🌟",
+    img:"https://images.unsplash.com/photo-1518837695005-2083093ee35b?crop=entropy&cs=tinysrgb&fit=max&h=300&w=600",
+    animal:"https://i.imgur.com/L0y7F9B.png" // conejito
+  },
+  {
+    phrase:"Desde Chicago hasta Guadalajara, mi corazón siempre sabe dónde pertenece 💌",
+    img:"https://images.unsplash.com/photo-1506744038136-46273834b3fb?crop=entropy&cs=tinysrgb&fit=max&h=300&w=600",
+    animal:"https://i.imgur.com/6rGb2Ex.png" // perrito
+  },
+  {
+    phrase:"Gracias por volver a elegirme, gracias por estar conmigo 💖",
+    img:"https://images.unsplash.com/photo-1519681393784-d120267933ba?crop=entropy&cs=tinysrgb&fit=max&h=300&w=600",
+    animal:"https://i.imgur.com/4AiXzf8.png"
+  },
+  {
+    phrase:"Merry Christmas, babe 🎄❤️",
+    img:"https://images.unsplash.com/photo-1516910817561-5f35b0b2b831?crop=entropy&cs=tinysrgb&fit=max&h=300&w=600",
+    animal:"https://i.imgur.com/L0y7F9B.png"
+  }
 ];
 
-let index = 0;
-let char = 0;
-const speed = 45;
-const typeDiv = document.getElementById("typewriter");
+let current = 0;
+const phraseBox = document.getElementById("phraseBox");
+const landscape = document.getElementById("landscape");
+const nextBtn = document.getElementById("nextBtn");
 
-function typeWriter() {
-  if (index < text.length) {
-    if (char < text[index].length) {
-      typeDiv.innerHTML += text[index].charAt(char);
-      char++;
-      setTimeout(typeWriter, speed);
-    } else {
-      typeDiv.innerHTML += "<br><br>";
-      char = 0;
-      index++;
-      setTimeout(typeWriter, 600);
+function showSlide(index){
+  phraseBox.innerHTML = "";
+  landscape.style.display = "block";
+  landscape.src = slides[index].img;
+
+  // Máquina de escribir
+  let text = slides[index].phrase;
+  let i = 0;
+  function typeWriter(){
+    if(i<text.length){
+      phraseBox.innerHTML += text.charAt(i);
+      i++;
+      setTimeout(typeWriter,50);
     }
+  }
+  typeWriter();
+
+  // Animalito
+  const animalImg = document.createElement("img");
+  animalImg.src = slides[index].animal;
+  animalImg.className = "animal";
+  document.body.appendChild(animalImg);
+
+  setTimeout(()=>{animalImg.remove()},8000); // se va después de unos segundos
+
+  // Si es último slide
+  if(index === slides.length-1){
+    nextBtn.style.display = "none";
   }
 }
 
-function startGift() {
-  document.getElementById("gallery").classList.remove("hidden");
-  document.getElementById("music").play();
-  typeDiv.innerHTML = "";
-  index = 0;
-  char = 0;
-  typeWriter();
-}
+// Botón siguiente
+nextBtn.addEventListener("click", ()=>{
+  showSlide(current);
+  current++;
+});
 
-// Corazones
-setInterval(() => {
-  const heart = document.createElement("div");
-  heart.className = "heart";
-  heart.innerHTML = "❤️";
-  heart.style.left = Math.random()*100 + "vw";
-  heart.style.fontSize = Math.random()*18 + 14 + "px";
+// Música
+const music = document.getElementById("music");
+music.play();
+
+const muteBtn = document.getElementById("muteBtn");
+muteBtn.addEventListener("click", ()=>{
+  if(music.muted){ music.muted = false; muteBtn.innerText="🔊 Mute"; }
+  else { music.muted = true; muteBtn.innerText="🔈 Unmute"; }
+});
+
+// Corazones y nieve
+setInterval(()=>{
+  const heart=document.createElement("div");
+  heart.className="heart";
+  heart.innerHTML="❤️";
+  heart.style.left=Math.random()*100+"vw";
+  heart.style.fontSize=Math.random()*18+14+"px";
   document.body.appendChild(heart);
   setTimeout(()=>heart.remove(),6000);
-}, 300);
+},400);
 
-// Nieve
-setInterval(() => {
-  const snow = document.createElement("div");
-  snow.className = "snow";
-  snow.style.left = Math.random()*100 + "vw";
-  snow.style.width = snow.style.height = Math.random()*5 + 4 + "px";
-  snow.style.animationDuration = Math.random()*6 + 4 + "s";
+setInterval(()=>{
+  const snow=document.createElement("div");
+  snow.className="snow";
+  snow.style.left=Math.random()*100+"vw";
+  snow.style.width=snow.style.height=Math.random()*5+4+"px";
+  snow.style.animationDuration=Math.random()*6+4+"s";
   document.body.appendChild(snow);
   setTimeout(()=>snow.remove(),10000);
-}, 200);
+},200);
 </script>
-
 </body>
 </html>
+
